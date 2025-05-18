@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <title>Medical Documents</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen relative">
+  <header class="bg-white shadow-md p-4">
+    <h2 class="text-3xl font-semibold text-center text-blue-700">Your Medical Documents</h2>
+  </header>
+
+  <main class="max-w-4xl mx-auto p-6 space-y-6">
+    <div id="documentsContainer"></div>
+  </main>
+
+  <!-- Fixed upload button top-right -->
+  <a href="upload.html"
+     class="fixed top-3 right-6 bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg hover:bg-blue-700 transition font-semibold flex items-center space-x-2 z-50">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+    </svg>
+    <span>Upload</span>
+  </a>
+
+  <script>
+    const userId = localStorage.getItem("userId") || "demo-user"; // Replace if needed
+    const BACKEND_URL = `https://medical-backend-kf3a.onrender.com/api/medical-documents/user/${userId}`;
+
+    async function loadDocuments() {
+      try {
+        const res = await fetch(BACKEND_URL);
+        if (!res.ok) throw new Error("Failed to fetch documents");
+
+        const documents = await res.json();
+        const container = document.getElementById("documentsContainer");
+
+        container.innerHTML = "";
+
+        if (documents.length === 0) {
+          container.innerHTML = `<p class="text-gray-500 text-center text-lg mt-12">No documents found.</p>`;
+          return;
+        }
+
+        documents.forEach(doc => {
+          const docDiv = document.createElement("div");
+          docDiv.className = "bg-white p-6 rounded-lg shadow-md";
+
+          const formattedDate = new Date(doc.dateUploaded).toLocaleDateString();
+
+          docDiv.innerHTML = `
+            <h3 class="text-xl font-semibold mb-1">${doc.title}</h3>
+            <p class="text-gray-600 mb-1"><strong>Type:</strong> ${doc.type}</p>
+            <p class="text-gray-600 mb-3"><strong>Uploaded on:</strong> ${formattedDate}</p>
+            <img src="${doc.fileUrl}" alt="${doc.title}" class="max-w-full rounded-md border border-gray-300" />
+          `;
+
+          container.appendChild(docDiv);
+        });
+      } catch (err) {
+        console.error(err);
+        alert("Failed to load documents.");
+      }
+    }
+
+    window.onload = loadDocuments;
+  </script>
+</body>
+</html>

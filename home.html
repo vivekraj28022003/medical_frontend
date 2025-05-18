@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          backdropBlur: {
+            sm: '4px',
+            md: '12px',
+          },
+        }
+      }
+    };
+  </script>
+</head>
+
+<body
+  class="bg-gradient-to-br from-gray-100 via-blue-50 to-white text-gray-800 dark:bg-gray-900 dark:text-white transition-all duration-300">
+  <!-- Navbar -->
+  <nav class="bg-white/70 dark:bg-gray-800/80 backdrop-blur-md shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <img src="assets/logo.jpg" alt="logo" class="w-10 h-10 rounded-full object-cover" />
+        <span class="text-xl font-bold tracking-wide">Health Dashboard</span>
+      </div>
+      <ul class="hidden md:flex gap-6 font-medium text-sm">
+        <li><a href="home.html" class="hover:text-blue-500 transition">Home</a></li>
+        <li><a href="prehistory/pre.html" class="hover:text-blue-500 transition">Pre-History</a></li>
+        <li><a href="symptom.html" class="hover:text-blue-500 transition">Medical Diagnosis</a></li>
+        <li><a href="medical_docs.html" class="hover:text-blue-500 transition">Medical Documents</a></li>
+        <li><a href="about.html" class="hover:text-blue-500 transition">About</a></li>
+      </ul>
+      <div class="hidden md:flex items-center gap-3 ml-4">
+        <a href="login.html" class="transition hover:scale-105">
+          <img src="assets/login.png" alt="login" class="w-8 h-8" />
+        </a>
+        <a href="#" onclick="handleLogout()"
+          class="px-4 py-2 text-sm bg-red-500 text-white rounded-full hover:bg-red-600 transition">
+          Logout
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="px-6 md:px-10 py-10 max-w-7xl mx-auto">
+    <div id="dashboard-cards" class="grid gap-10 md:grid-cols-2"></div>
+
+    <!-- Health Tips -->
+    <div class="mt-10">
+      <h3 class="text-lg font-semibold mb-4">Health Tips</h3>
+      <div class="grid md:grid-cols-3 gap-4">
+        <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">Drink plenty of water</div>
+        <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">Exercise regularly</div>
+        <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow">Get enough sleep</div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="text-center text-sm text-gray-500 py-6 dark:text-gray-400">&copy; 2025 Health Dashboard</footer>
+  <button onclick="showAssistant()"
+    class="fixed bottom-4 right-4 bg-blue-500 text-white p-3 rounded-full shadow-lg">🤖</button>
+
+  <script>
+    const userId = localStorage.getItem("userId") || null;
+    const userGender = localStorage.getItem("gender");
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const dashboard = document.getElementById("dashboard-cards");
+
+      if (userGender === "Female") {
+        dashboard.innerHTML += `
+          <a href="menstural/menstual.html">
+            <div class="bg-white/80 dark:bg-gray-800/80 rounded-2xl shadow-xl p-6 backdrop-blur-md">
+              <h2 class="text-xl font-semibold mb-4">Menstrual Tracker</h2>
+              <div class="grid gap-4">
+                <div class="p-4 rounded-xl bg-pink-50 dark:bg-pink-900/40">
+                  <p class="text-sm text-pink-700 dark:text-pink-300 font-medium">Next Period</p>
+                  <p id="nextPeriod" class="text-2xl font-bold">--</p>
+                </div>
+                <div class="p-4 rounded-xl bg-violet-50 dark:bg-violet-900/40">
+                  <p class="text-sm text-violet-700 dark:text-violet-300 font-medium">Ovulation Window</p>
+                  <p id="ovulationWindow" class="text-2xl font-bold">--</p>
+                </div>
+              </div>
+            </div>
+          </a>
+        `;
+        const menstrual = await fetchLatestMenstrualRecord(userId);
+        if (menstrual) {
+          const startDate = new Date(menstrual.startDate);
+          const cycleLength = 28; // or dynamically computed if you want
+          const ovulationDay = new Date(startDate);
+          ovulationDay.setDate(startDate.getDate() + 14);
+
+          const nextPeriod = new Date(startDate);
+          nextPeriod.setDate(startDate.getDate() + cycleLength);
+
+          document.getElementById("nextPeriod").textContent = nextPeriod.toDateString();
+          document.getElementById("ovulationWindow").textContent = `${new Date(ovulationDay.getTime() - 2 * 86400000).toDateString()} - ${new Date(ovulationDay.getTime() + 2 * 86400000).toDateString()}`;
+        }
+
+
+      }
+
+      dashboard.innerHTML += `
+        <a href="bp_sugar/bp_sugar.html">
+          <div class="bg-white/80 dark:bg-gray-800/80 rounded-2xl shadow-xl p-6 backdrop-blur-md">
+            <h2 class="text-xl font-semibold mb-4">Vitals Monitoring</h2>
+            <div class="grid gap-4">
+              <div class="p-4 rounded-xl bg-green-50 dark:bg-green-900/40">
+                <p class="text-sm text-green-700 dark:text-green-300 font-medium">Blood Pressure</p>
+                <p class="text-xl font-bold"><span id="sys">--</span>/<span id="dis">--</span> mmHg</p>
+              </div>
+              <div class="p-4 rounded-xl bg-yellow-50 dark:bg-yellow-900/40">
+                <p class="text-sm text-yellow-700 dark:text-yellow-300 font-medium">Blood Sugar</p>
+                <p class="text-xl font-bold"><span id="sugar-value">--</span> mg/dL</p>
+              </div>
+              <canvas id="sugar-chart" height="100"></canvas>
+            </div>
+          </div>
+        </a>
+      `;
+
+      if (userId) {
+        const bp = await fetchLatestBloodPressure(userId);
+        updateBloodPressureUI(bp);
+        const sugar = await fetchLatestSugarLevel(userId);
+        updateSugarUI(sugar);
+        if (bp) showBpAlert(bp.systolic, bp.diastolic);
+      } else {
+        updateBloodPressureUI(null);
+        updateSugarUI(null);
+      }
+
+      renderSugarChart();
+    });
+
+    async function fetchLatestMenstrualRecord(userId) {
+      try {
+        const res = await fetch(`https://medical-backend-kf3a.onrender.com/api/menstrual/user/${userId}/latest`);
+        if (!res.ok) return null;
+        return await res.json();
+      } catch (err) {
+        console.error("Menstrual fetch error:", err);
+        return null;
+      }
+    }
+
+    function updateBloodPressureUI(bp) {
+      document.getElementById("sys").textContent = bp ? bp.systolic : "--";
+      document.getElementById("dis").textContent = bp ? bp.diastolic : "--";
+    }
+
+    function updateSugarUI(sugar) {
+      document.getElementById("sugar-value").textContent = sugar ?? "--";
+    }
+
+    function showBpAlert(systolic, diastolic) {
+      let alertMessage = '';
+      if (systolic >= 140 || diastolic >= 90) {
+        alertMessage = 'Your blood pressure is high. Please consult a doctor.';
+      } else if (systolic >= 130 || diastolic >= 80) {
+        alertMessage = 'Your blood pressure is slightly elevated. Monitor it.';
+      } else if (systolic !== "--" && diastolic !== "--") {
+        alertMessage = 'Your blood pressure is normal. Great job!';
+      }
+      if (alertMessage) {
+        Swal.fire({ title: 'Blood Pressure Status', text: alertMessage, icon: 'info', confirmButtonText: 'OK' });
+      }
+    }
+
+    async function fetchLatestBloodPressure(userId) {
+      try {
+        const url = `http://localhost:8080/api/blood-pressure/user/${userId}/latest`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        return await res.json();
+      } catch (err) {
+        console.error("BP fetch error:", err);
+        return null;
+      }
+    }
+
+    async function fetchLatestSugarLevel(userId) {
+      try {
+        const url = `http://localhost:8080/api/sugar-level/user/${userId}/latest`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const sugar = await res.json();
+        return sugar.level;
+      } catch (err) {
+        console.error("Sugar fetch error:", err);
+        return null;
+      }
+    }
+
+    function renderSugarChart() {
+      const ctx = document.getElementById("sugar-chart").getContext("2d");
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+          datasets: [{
+            label: 'Blood Sugar',
+            data: [90, 95, 100, 93, 95],
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    function showAssistant() {
+      Swal.fire({ title: 'Virtual Assistant', text: 'Hi! I\'m here to help.', icon: 'info', confirmButtonText: 'OK' });
+    }
+
+    function handleLogout() {
+      localStorage.clear();
+      Swal.fire({ icon: 'success', title: 'Logged Out', text: 'Successfully logged out.', confirmButtonText: 'OK' })
+        .then(() => { window.location.href = 'index.html'; });
+    }
+  </script>
+</body>
+
+</html>

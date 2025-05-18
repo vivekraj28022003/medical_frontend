@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Menstrual Cycle Tracker</title>
+  <link rel="shortcut icon" href="assets/logo.jpg" type="image/x-icon" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#ec4899',
+            secondary: '#f9a8d4',
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="bg-pink-50 dark:bg-gray-900 text-gray-800 dark:text-white transition duration-300">
+  <div class="container max-w-3xl mx-auto px-6 py-12">
+    <h1 class="text-3xl md:text-4xl font-bold text-center mb-10">🩸 Menstrual Cycle Tracker</h1>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-10">
+      <h2 class="text-xl font-semibold mb-4">📅 Log Your Period Start</h2>
+      <p class="text-sm mb-6 text-gray-600 dark:text-gray-400">Start by selecting the first day of your current period. Optionally, you can provide duration and notes.</p>
+
+      <div class="grid md:grid-cols-4 gap-4">
+        <div class="flex flex-col">
+          <label for="cycleStart" class="text-sm font-medium mb-1">Start Date</label>
+          <input type="date" id="cycleStart" class="border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md" />
+        </div>
+        <div class="flex flex-col">
+          <label for="duration" class="text-sm font-medium mb-1">Duration (days)</label>
+          <input type="number" id="duration" min="1" max="10" value="5" class="border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md" />
+        </div>
+        <div class="flex flex-col col-span-2">
+          <label for="notes" class="text-sm font-medium mb-1">Notes (optional)</label>
+          <input type="text" id="notes" placeholder="e.g. Mild cramps, mood swings" class="border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-md" />
+        </div>
+      </div>
+
+      <div class="mt-6 text-center">
+        <button onclick="logCycle()" class="bg-primary hover:bg-pink-600 text-white px-6 py-2 rounded-md text-lg font-semibold">
+          ➕ Log Period Start
+        </button>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 mb-12">
+      <div class="bg-primary/20 dark:bg-pink-900/30 rounded-xl p-6 text-center">
+        <h3 class="text-lg font-semibold text-primary dark:text-pink-300">🗓️ Next Period Prediction</h3>
+        <p id="nextPeriod" class="text-2xl font-bold mt-2">--</p>
+        <p class="text-xs mt-1 text-gray-600 dark:text-gray-400">(Based on a 28-day average cycle)</p>
+      </div>
+      <div class="bg-secondary/20 dark:bg-pink-800/40 rounded-xl p-6 text-center">
+        <h3 class="text-lg font-semibold text-pink-600 dark:text-pink-200">🌼 Ovulation Window</h3>
+        <p id="ovulationWindow" class="text-2xl font-bold mt-2">--</p>
+        <p class="text-xs mt-1 text-gray-600 dark:text-gray-400">(Approximately 14 days from start)</p>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+      <h2 class="text-2xl font-semibold mb-4">📚 Cycle History</h2>
+      <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Your previous logged periods will appear below.</p>
+      <div id="historyList" class="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+        <!-- History entries appear here -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const userId = localStorage.getItem("userId") || null;
+f
+    async function fetchHistory() {
+      try {
+        const res = await fetch(`https://medical-backend-kf3a.onrender.com/api/menstrual/user/${userId}`);
+        const data = await res.json();
+        const history = document.getElementById("historyList");
+        history.innerHTML = "";
+
+        if (data.length === 0) {
+          history.innerHTML = "<p class='text-center text-gray-500'>No cycle records found.</p>";
+          return;
+        }
+
+        data.reverse().forEach(record => {
+          const startDate = new Date(record.startDate);
+          const nextPeriod = new Date(startDate);
+          nextPeriod.setDate(startDate.getDate() + 28);
+          const ovulation = new Date(startDate);
+          ovulation.setDate(startDate.getDate() + 14);
+
+          const entry = document.createElement("div");
+          entry.className = "bg-pink-100 dark:bg-gray-700 p-3 rounded shadow-sm";
+          entry.innerHTML = `
+            <strong>${startDate.toDateString()}</strong> 
+            — Duration: ${record.duration} days 
+            ${record.notes ? `| Notes: ${record.notes}` : ""}
+          `;
+          history.appendChild(entry);
+
+          // Set latest predictions
+          if (history.children.length === 1) {
+            document.getElementById("nextPeriod").textContent = nextPeriod.toDateString();
+            document.getElementById("ovulationWindow").textContent = ovulation.toDateString();
+          }
+        });
+      } catch (err) {
+        console.error("Error fetching history:", err);
+      }
+    }
+
+    async function logCycle() {
+      const input = document.getElementById("cycleStart");
+      const duration = parseInt(document.getElementById("duration").value, 10);
+      const notes = document.getElementById("notes").value.trim();
+      const date = new Date(input.value);
+
+      if (!input.value) {
+        Swal.fire('Please select a start date!', '', 'warning');
+        return;
+      }
+
+      const dto = {
+        userId,
+        startDate: input.value,
+        duration: isNaN(duration) ? 5 : duration,
+        notes
+      };
+
+      try {
+        const res = await fetch("https://medical-backend-kf3a.onrender.com/api/menstrual", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dto)
+        });
+
+        if (!res.ok) throw new Error("Failed to log cycle");
+
+        Swal.fire({
+          title: 'Cycle Logged!',
+          text: `Start Date: ${date.toDateString()}`,
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        });
+
+        fetchHistory();
+        input.value = "";
+        document.getElementById("duration").value = "5";
+        document.getElementById("notes").value = "";
+      } catch (err) {
+        console.error(err);
+        Swal.fire('Failed to log cycle.', '', 'error');
+      }
+    }
+
+    window.onload = fetchHistory;
+  </script>
+</body>
+</html>

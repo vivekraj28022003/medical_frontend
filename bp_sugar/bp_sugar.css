@@ -1,0 +1,101 @@
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f0f2f5;
+}
+
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card h2 {
+    margin-top: 0;
+    color: #333;
+}
+
+.reading {
+    font-size: 2.5em;
+    font-weight: bold;
+    margin: 15px 0;
+    color: #2c3e50;
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    color: #7f8c8d;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.normal { background-color: #2ecc71; }
+.warning { background-color: #f1c40f; }
+.danger { background-color: #e74c3c; }
+
+#chart-container {
+    grid-column: 1 / -1;
+    height: 300px;
+}
+
+.input-form {
+    grid-column: 1 / -1;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.input-group {
+    margin: 10px 0;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+input {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 120px;
+}
+
+button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #2980b9;
+}
+
+.health-summary {
+    grid-column: 1 / -1;
+    padding: 20px;
+    border-radius: 10px;
+    font-size: 1.2em;
+}
+
+.good { background: #2ecc71; color: white; }
+.warning-summary { background: #f1c40f; color: black; }
+.danger-summary { background: #e74c3c; color: white; }

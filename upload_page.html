@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload Medical Images</title>
+  <link rel="shortcut icon" href="assets/logo.jpg" type="image/x-icon" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-cover bg-center bg-no-repeat" style="background-image: url('assets/bgimg.png'); font-family: 'Poppins', sans-serif;">
+
+  <div class="flex justify-center items-center min-h-screen bg-white/70 backdrop-blur-sm">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+      <div class="flex justify-center mb-4">
+        <img src="assets/logo.jpg" alt="First Aid Logo" class="w-16 h-16 rounded-full shadow-md" />
+      </div>
+
+      <h2 class="text-2xl font-semibold text-center text-gray-800 mb-4">Upload Medical Images</h2>
+
+      <form id="uploadForm">
+        <div class="mb-4">
+          <label for="imageUpload" class="block text-sm font-medium text-gray-700">Select Medical Images (Multiple)</label>
+          <input type="file" id="imageUpload" name="imageUpload" multiple accept="image/*" required
+            class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" />
+        </div>
+
+        <div id="imagePreviewContainer" class="mb-4 flex flex-wrap"></div>
+
+        <button type="submit"
+          class="w-full bg-blue-600 text-white font-semibold py-2 rounded-md hover:bg-blue-700 transition duration-300">
+          Upload Images
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase Scripts -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-storage.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDZ3-I-Q8-8zB-VFEKnFZ6g4Yroor9ZCZ0",
+      authDomain: "firstaid-4e668.firebaseapp.com",
+      projectId: "firstaid-4e668",
+      storageBucket: "firstaid-4e668.appspot.com",
+      messagingSenderId: "880679564347",
+      appId: "1:880679564347:web:bf595cd9a23b4039e9d81e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const storage = getStorage(app);
+    const db = getFirestore(app);
+
+    const imageInput = document.getElementById("imageUpload");
+    const previewContainer = document.getElementById("imagePreviewContainer");
+    const form = document.getElementById("uploadForm");
+
+    imageInput.addEventListener("change", () => {
+      previewContainer.innerHTML = "";
+      const files = imageInput.files;
+
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = document.createElement("img");
+          img.src = e.target.result;
+          img.classList.add("w-24", "h-24", "object-cover", "m-2", "rounded-md");
+          previewContainer.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const files = imageInput.files;
+      if (files.length === 0) {
+        alert("Please select at least one image.");
+        return;
+      }
+
+      onAuthStateChanged(auth, (user) => {
+        if (!user) {
+          alert("User not logged in.");
+          return;
+        }
+
+        const userId = user.uid;
+        const imageUrls = [];
+
+        Array.from(files).forEach((file, index) => {
+          const storageRef = ref(storage, `medical_images/${userId}/${file.name}`);
+          uploadBytes(storageRef, file)
+            .then(snapshot => getDownloadURL(snapshot.ref))
+            .then(url => {
+              imageUrls.push(url);
+
+              if (imageUrls.length === files.length) {
+                return addDoc(collection(db, "medical_images"), {
+                  userId: userId,
+                  imageUrls: imageUrls,
+                  timestamp: new Date(),
+                });
+              }
+            })
+            .then(() => {
+              if (imageUrls.length === files.length) {
+                alert("Images uploaded and saved!");
+                form.reset();
+                previewContainer.innerHTML = "";
+              }
+            })
+            .catch(err => {
+              alert("Upload error: " + err.message);
+            });
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>
